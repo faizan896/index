@@ -74,8 +74,8 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     if (pathname.startsWith("/api/")) {
       return withCookies(response, NextResponse.json({ error: "Sign in to continue." }, { status: 401 }));
     }
-    const next = pathname === "/" ? {} : { next: `${pathname}${request.nextUrl.search}` };
-    return withCookies(response, NextResponse.redirect(redirectTo(request, "/login", next)));
+    const params: Record<string, string> = pathname === "/" ? {} : { next: `${pathname}${request.nextUrl.search}` };
+    return withCookies(response, NextResponse.redirect(redirectTo(request, "/login", params)));
   }
 
   if (user && pathname === "/login") {

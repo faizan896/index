@@ -12,7 +12,7 @@ type ReadingStatus = "unread" | "reading" | "finished";
 type ProcessingStatus = "pending" | "processing" | "done" | "failed" | "skipped";
 type AssignmentSource = "ai" | "user" | "import";
 
-export interface SavedLinkRow {
+export type SavedLinkRow = {
   id: string;
   user_id: string;
   url: string;
@@ -50,12 +50,12 @@ export interface SavedLinkRow {
   search_vector: unknown;
   created_at: string;
   updated_at: string;
-}
+};
 
 type SavedLinkInsert = Partial<Omit<SavedLinkRow, "url" | "normalized_url" | "domain">> &
   Pick<SavedLinkRow, "url" | "normalized_url" | "domain">;
 
-export interface ListLinksRow {
+export type ListLinksRow = {
   id: string;
   url: string;
   domain: string;
@@ -74,9 +74,9 @@ export interface ListLinksRow {
   tags: Json;
   rank: number;
   total_count: number;
-}
+};
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       user_settings: {
@@ -337,4 +337,4 @@ export interface Database {
     };
     CompositeTypes: { [_ in never]: never };
   };
-}
+};
