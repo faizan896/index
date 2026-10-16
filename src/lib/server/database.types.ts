@@ -323,6 +323,8 @@ export interface Database {
       };
       import_links: { Args: { p_rows: Json }; Returns: Json };
       export_library: { Args: Record<string, never>; Returns: Json };
+      get_link_item: { Args: { p_link_id: string }; Returns: ListLinksRow[] };
+      link_detail: { Args: { p_link_id: string }; Returns: Json };
       claim_link_processing: {
         Args: { p_link_id: string; p_force?: boolean };
         Returns: SavedLinkRow[];
