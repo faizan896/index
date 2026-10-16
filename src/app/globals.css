@@ -1,0 +1,165 @@
+@import "tailwindcss";
+
+/*
+ * Index — design tokens.
+ *
+ * White paper, black ink, a few grays, and hairlines. Hierarchy comes from
+ * type and space, never from color or decoration. The only non-gray color is
+ * the muted red reserved for destructive actions and errors.
+ */
+@theme {
+  --color-paper: #ffffff;
+  --color-ink: #111111;
+  --color-ink-soft: #333333;
+  --color-muted: #6b6b6b;
+  --color-faint: #9a9a9a;
+  --color-rule: #e8e8e6;
+  --color-rule-strong: #d4d4d1;
+  --color-wash: #f6f6f4;
+  --color-danger: #a3261b;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: var(--font-newsreader), ui-serif, Georgia, "Times New Roman", serif;
+
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.125rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 0.9375rem;
+  --text-base--line-height: 1.5rem;
+  --text-title: 1.1875rem;
+  --text-title--line-height: 1.6rem;
+  --text-display: 2.125rem;
+  --text-display--line-height: 2.5rem;
+  --text-hero: 2.5rem;
+  --text-hero--line-height: 2.875rem;
+
+  --tracking-label: 0.08em;
+  --radius-control: 3px;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: #111111;
+    color: #ffffff;
+  }
+
+  /* One focus style everywhere: a crisp ink outline, only for keyboard users. */
+  :focus-visible {
+    outline: 1.5px solid var(--color-ink);
+    outline-offset: 3px;
+    border-radius: 1px;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-faint);
+    opacity: 1;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  /* Native search inputs: no WebKit clear button or decoration. */
+  input[type="search"]::-webkit-search-decoration,
+  input[type="search"]::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Small uppercase label used for section headings in the sidebar and panels. */
+  .label {
+    font-size: var(--text-2xs);
+    line-height: var(--text-2xs--line-height);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--color-faint);
+    font-weight: 500;
+  }
+
+  /* The one link treatment: a hairline underline that firms up on hover. */
+  .link {
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--color-rule-strong);
+    transition: text-decoration-color 120ms ease;
+  }
+  .link:hover {
+    text-decoration-color: currentColor;
+  }
+
+  /* Titles underline only on hover, and only as a hairline. */
+  .title-link {
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 4px;
+    text-decoration-color: transparent;
+    transition: text-decoration-color 120ms ease;
+  }
+  .title-link:hover {
+    text-decoration-color: currentColor;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer utilities {
+  .animate-pulse-soft {
+    animation: pulse-soft 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
