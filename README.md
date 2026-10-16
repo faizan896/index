@@ -68,11 +68,9 @@ You need Node.js 22.18 or newer, a [Supabase](https://supabase.com) project
 (the free tier is plenty), and optionally an
 [Anthropic API key](https://console.anthropic.com) for categorization.
 
-Index lives in `apps/index` of this repository. All commands below run from
-that directory.
-
 ```bash
-cd apps/index
+git clone https://github.com/faizan896/index
+cd index
 npm install
 cp .env.example .env.local
 ```
@@ -140,8 +138,8 @@ Open http://localhost:3000, sign in, and paste a link.
 
 ## Deploying to Vercel
 
-1. Import this repository in Vercel and set **Root Directory** to `apps/index`.
-   The framework preset is detected as Next.js.
+1. Import this repository in Vercel. The framework preset is detected as
+   Next.js; no other build settings are needed.
 2. Add the environment variables above (set `NEXT_PUBLIC_SITE_URL` to the
    production URL).
 3. Deploy, then add `https://<your-domain>/auth/callback` and
