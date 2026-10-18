@@ -217,10 +217,7 @@ async function resolveAddresses(url: URL, options: FetchPageOptions, signal: Abo
     const lookup = options.lookup ?? systemLookup;
     let answers: unknown;
     try {
-      answers = await untilAborted(
-        Promise.resolve().then(() => lookup(host)),
-        signal,
-      );
+      answers = await untilAborted(Promise.resolve().then(() => lookup(host)), signal);
     } catch {
       throw new FetchFailure(signal.aborted ? "timeout" : "dns", { finalUrl });
     }
@@ -452,10 +449,7 @@ function pinnedLookup(addresses: readonly ResolvedAddress[], dial?: (address: st
         const error = Object.assign(new Error("No validated address for this host."), { code: "ENOTFOUND" });
         callback(error, lookupOptions.all ? [] : "");
       } else if (lookupOptions.all) {
-        callback(
-          null,
-          usable.map((target) => ({ address: target.address, family: target.family })),
-        );
+        callback(null, usable.map((target) => ({ address: target.address, family: target.family })));
       } else {
         callback(null, first.address, first.family);
       }
@@ -463,7 +457,7 @@ function pinnedLookup(addresses: readonly ResolvedAddress[], dial?: (address: st
   };
 }
 
-/** Decoders for a Content-Encoding header, outermost coding last; null when one isn't supported. */
+/** Decoders for a Content-Encoding header, in the order to apply them; null when a coding isn't supported. */
 function createDecoders(contentEncoding: string | null): Transform[] | null {
   const codings = (contentEncoding ?? "")
     .toLowerCase()

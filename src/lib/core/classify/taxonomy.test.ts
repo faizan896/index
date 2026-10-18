@@ -62,7 +62,7 @@ describe("cleanTermName", () => {
     ["1960s", "1960s"],
     ["Économie", "Économie"],
     ["建築", "建築"],
-    ["a​i", "AI"],
+    ["a\u200bi", "AI"],
     // Junk.
     ["", null],
     ["   ", null],
@@ -403,7 +403,7 @@ describe("validateManualTerm", () => {
     for (const [input, error] of [
       ["", "Enter a name."],
       ["   ", "Enter a name."],
-      ["​", "Enter a name."],
+      ["\u200b", "Enter a name."],
       ["—", "Use at least one letter or number."],
       ["!!!", "Use at least one letter or number."],
     ] as const) {

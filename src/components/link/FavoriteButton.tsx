@@ -22,6 +22,8 @@ export function FavoriteButton({ linkId, isFavorite, onChange, withLabel = false
   const { toast } = useToast();
   const [, startTransition] = useTransition();
   const [override, setOverride] = useState<{ value: boolean; base: boolean } | null>(null);
+  // Once the prop moves on, it is the truth again (see StatusMenu).
+  if (override && override.base !== isFavorite) setOverride(null);
   const shown = override && override.base === isFavorite ? override.value : isFavorite;
 
   function toggle() {

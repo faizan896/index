@@ -181,7 +181,7 @@ async function categorize(supabase: ServerSupabase, link: SavedLinkRow, keywords
   if (!hasSignal(link)) return finish("skipped", "There wasn't enough information to categorize this link.");
 
   const [categories, tags, collections] = await Promise.all([
-    supabase.from("categories").select("id, name, slug").order("name"),
+    supabase.rpc("category_summaries"),
     supabase.from("tags").select("id, name, slug").order("name"),
     supabase.from("collections").select("id, name, description").order("name"),
   ]);
@@ -199,7 +199,11 @@ async function categorize(supabase: ServerSupabase, link: SavedLinkRow, keywords
     author: link.author,
     excerpt: link.content_excerpt,
     keywords,
-    existingCategories: categories.data.map((category) => category.name),
+    // Most-used first: in a very large library the prompt lists only the top
+    // of this list, and those are the categories worth reusing.
+    existingCategories: [...categories.data]
+      .sort((a, b) => Number(b.link_count) - Number(a.link_count))
+      .map((category) => category.name),
     collections: collections.data.map((collection) => ({
       id: collection.id,
       name: collection.name,
@@ -225,7 +229,7 @@ async function categorize(supabase: ServerSupabase, link: SavedLinkRow, keywords
   }
 
   const outcome = resolveClassification(raw, {
-    existingCategories: categories.data,
+    existingCategories: categories.data.map(({ id, name, slug }) => ({ id, name, slug })),
     existingTags: tags.data,
     collections: collections.data.map(({ id, name }) => ({ id, name })),
   });

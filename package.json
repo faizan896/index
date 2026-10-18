@@ -17,7 +17,7 @@
     "check": "npm run lint && npm run typecheck && npm test"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.65.0",
+    "@anthropic-ai/sdk": "^0.135.0",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.57.0",
     "next": "^15.5.27",

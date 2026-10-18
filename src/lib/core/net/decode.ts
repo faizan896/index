@@ -53,7 +53,7 @@ export function sniffHtmlCharset(head: Uint8Array): string | null {
     if (label === null && attributes.get("http-equiv")?.trim().toLowerCase() === "content-type") {
       label = charsetLabel(CHARSET_PARAM.exec(attributes.get("content") ?? ""));
     }
-    const encoding = label === null ? null : supportedEncoding(label);
+    const encoding = supportedEncoding(label);
     if (!encoding) continue;
     // A document that could be read as ASCII to find this tag isn't UTF-16.
     return encoding === "utf-16le" || encoding === "utf-16be" ? "utf-8" : encoding;

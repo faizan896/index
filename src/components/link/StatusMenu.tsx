@@ -19,6 +19,8 @@ export interface StatusMenuProps {
   status: ReadingStatus;
   /** Called optimistically with the new status, and again with the old one if saving fails. */
   onChange?: (status: ReadingStatus) => void;
+  /** Which edge the menu lines up with; "end" keeps it on screen near the right edge. */
+  align?: "start" | "end";
   className?: string;
 }
 
@@ -26,11 +28,14 @@ export interface StatusMenuProps {
  * Inline reading-status control: reads as quiet text ("Unread ▾") and opens
  * a three-item menu. Updates instantly and reverts if the save fails.
  */
-export function StatusMenu({ linkId, status, onChange, className }: StatusMenuProps) {
+export function StatusMenu({ linkId, status, onChange, align = "start", className }: StatusMenuProps) {
   const { toast } = useToast();
   const [, startTransition] = useTransition();
   // A local override shown until the parent's `status` prop catches up.
   const [override, setOverride] = useState<{ value: ReadingStatus; base: ReadingStatus } | null>(null);
+  // Once the prop moves on, it is the truth again; drop the override so it
+  // can't resurface if the prop later returns to its old value.
+  if (override && override.base !== status) setOverride(null);
   const shown = override && override.base === status ? override.value : status;
 
   function select(next: ReadingStatus) {
@@ -53,6 +58,7 @@ export function StatusMenu({ linkId, status, onChange, className }: StatusMenuPr
       value={shown}
       items={ITEMS}
       onSelect={select}
+      align={align}
       triggerClassName={cx("text-sm text-muted transition-colors hover:text-ink", shown !== "unread" && "text-ink-soft", className)}
       trigger={
         <>

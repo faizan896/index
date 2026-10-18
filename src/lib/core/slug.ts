@@ -11,7 +11,7 @@ const MAX_SLUG_LENGTH = 80;
 export function slugify(name: string): string {
   const ascii = name
     .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/&/g, " and ")
     .replace(/\+\+/g, " plus plus ")

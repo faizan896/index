@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="norton-safeweb-site-verification" content="24usqpep0ejc5w6hod3dulxwciwp0djs6c6ufp96av3t4whuxovj72wfkdjxu82yacb7430qjm8adbd5ezlt4592dq4zrvadcn9j9n-0btgdzpiojfzno16-fnsnu7xd" />
+<link rel="preconnect" href="https://substackcdn.com" />
+<title data-rh="true">Why Small Models Keep Winning - by Priya Raman</title>
+<meta data-rh="true" name="theme-color" content="#ffffff"/>
+<meta data-rh="true" property="og:type" content="article"/>
+<meta data-rh="true" property="og:title" content="Why Small Models Keep Winning"/>
+<meta data-rh="true" name="twitter:title" content="Why Small Models Keep Winning"/>
+<meta data-rh="true" name="description" content="The case for the model that fits on your laptop, and what the benchmarks leave out."/>
+<meta data-rh="true" property="og:description" content="The case for the model that fits on your laptop, and what the benchmarks leave out."/>
+<meta data-rh="true" name="twitter:description" content="The case for the model that fits on your laptop, and what the benchmarks leave out."/>
+<meta data-rh="true" property="og:image" content="https://substackcdn.com/image/fetch/w_1200,h_600,c_fill,f_jpg,q_auto:good,fl_progressive:steep,g_auto/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F5b1f2c3d.png"/>
+<meta data-rh="true" name="twitter:image" content="https://substackcdn.com/image/fetch/w_1200,h_600,c_fill,f_jpg,q_auto:good,fl_progressive:steep,g_auto/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F5b1f2c3d.png"/>
+<meta data-rh="true" name="twitter:card" content="summary_large_image"/>
+<meta data-rh="true" name="author" content="Priya Raman"/>
+<meta data-rh="true" property="og:url" content="https://longcontext.substack.com/p/why-small-models-keep-winning"/>
+<link data-rh="true" rel="canonical" href="https://longcontext.substack.com/p/why-small-models-keep-winning"/>
+<link data-rh="true" rel="alternate" type="application/rss+xml" href="https://longcontext.substack.com/feed" title="The Long Context"/>
+<script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"NewsArticle","url":"https://longcontext.substack.com/p/why-small-models-keep-winning","mainEntityOfPage":"https://longcontext.substack.com/p/why-small-models-keep-winning","headline":"Why Small Models Keep Winning","description":"The case for the model that fits on your laptop, and what the benchmarks leave out.","image":[{"@type":"ImageObject","url":"https://substack-post-media.s3.amazonaws.com/public/images/5b1f2c3d.png"}],"datePublished":"2024-03-05T13:01:22+00:00","dateModified":"2024-03-05T13:01:22+00:00","isAccessibleForFree":true,"author":[{"@type":"Person","name":"Priya Raman","url":"https://substack.com/@priyaraman","description":"Writes about applied machine learning.","identifier":"user:41873301","image":{"@type":"ImageObject","contentUrl":"https://substackcdn.com/image/fetch/w_120,h_120/avatar.png","thumbnailUrl":"https://substackcdn.com/image/fetch/w_64,h_64/avatar.png"}}],"publisher":{"@type":"Organization","name":"The Long Context","url":"https://longcontext.substack.com","description":"Notes on applied machine learning, weekly.","interactionStatistic":{"@type":"InteractionCounter","name":"Subscribers","interactionType":"https://schema.org/SubscribeAction","userInteractionCount":10000},"identifier":"pub:1702215","logo":{"@type":"ImageObject","url":"https://substackcdn.com/image/fetch/logo.png","contentUrl":"https://substackcdn.com/image/fetch/logo.png","thumbnailUrl":"https://substackcdn.com/image/fetch/w_128/logo.png"},"image":{"@type":"ImageObject","url":"https://substackcdn.com/image/fetch/logo.png"},"sameAs":["https://twitter.com/longcontext"]}}</script>
+<link rel="stylesheet" type="text/css" href="https://substackcdn.com/bundle/theme/main.3e9f2b.css" />
+<style>
+  .post-title { font-family: var(--font-heading); }
+  a[href*="subscribe"] > span::after { content: "<not a tag>"; }
+</style>
+</head>
+<body class="pc-root">
+<div id="entry">
+<div id="main" class="main typography use-theme-bg">
+<div class="main-menu-content">
+  <header class="main-menu">
+    <div class="topbar-content">
+      <a href="/" class="navbar-title-link"><h1 class="navbar-title">The Long Context</h1></a>
+      <nav class="navbar-buttons"><a href="/archive">Archive</a> <a href="/about">About</a> <button class="button primary">Subscribe</button> <button class="button">Sign in</button></nav>
+    </div>
+  </header>
+</div>
+<div class="container">
+<div class="single-post-container">
+<div class="container">
+<div class="single-post">
+<article class="typography newsletter-post post">
+  <div class="post-header">
+    <h1 class="post-title published title-X77sOw" dir="auto">Why Small Models Keep Winning</h1>
+    <h3 class="subtitle" dir="auto">The case for the model that fits on your laptop, and what the benchmarks leave out.</h3>
+    <div class="post-meta">
+      <div class="profile-hover-card-target"><a href="https://substack.com/@priyaraman" class="pencraft">Priya Raman</a></div>
+      <div class="pencraft pc-reset color-pub-secondary-text-hGQ02T">Mar 05, 2024</div>
+      <div class="post-ufi">
+        <button class="like-button-container" aria-label="Like (128)"><svg role="img" width="20" height="20" viewBox="0 0 24 24"><title>like</title><g><path d="M19 14c1.49-1.46 3-3.21 3-5.5"></path></g></svg><div class="label">128</div></button>
+        <button class="post-ufi-comment-button" aria-label="View comments (17)"><div class="label">17</div></button>
+        <button class="post-ufi-button" aria-label="Share">Share</button>
+      </div>
+    </div>
+  </div>
+  <div class="available-content">
+    <div dir="auto" class="body markup">
+      <p>Every few months a new frontier model arrives and the leaderboards reshuffle. The headlines follow the largest number. Yet when I look at what teams around me actually ship, the story is different: the model doing the work is usually small, a few billion parameters at most, and it runs somewhere boring, on a laptop, a phone or a single modest GPU in a closet.</p>
+      <p>This is not nostalgia for simpler tools. It is a pattern with reasons behind it, and the reasons say something about where applied machine learning is heading. I want to walk through three of them, then explain why the benchmarks keep missing the point.</p>
+      <h2 dir="auto">Latency is a feature</h2>
+      <p>The first reason is speed. A small model answers before the user has finished reading the question. That changes how people use a product. When a completion takes four seconds, people batch their requests and treat the tool like an oracle. When it takes two hundred milliseconds, they use it the way they use autocomplete, constantly and without ceremony. The second pattern produces far more value, and it is only possible when inference is cheap and close to the user.</p>
+      <p>Latency also compounds. An agent that calls a model twenty times to finish a task multiplies every delay by twenty. Teams building those systems learn quickly that a model which is slightly less clever but five times faster finishes more tasks per hour, and makes fewer users give up halfway.</p>
+      <h2 dir="auto">Narrow tasks reward narrow models</h2>
+      <p>The second reason is that most production work is narrow. Classifying support tickets, extracting fields from invoices, routing a request to the right queue: none of these needs a model that can also write sonnets and explain quantum field theory. A small model fine-tuned on a few thousand good examples will often match or beat a frontier model prompted from scratch, because it has seen exactly the distribution it will face.</p>
+      <p>Fine-tuning used to be expensive and fragile. It is now routine. Parameter-efficient methods let a single engineer adapt a model in an afternoon, evaluate it against a held-out set, and roll it back if something drifts. The economics have quietly flipped. The question is no longer whether you can afford to specialise, but whether you can afford not to.</p>
+      <h2 dir="auto">Control is worth more than capability</h2>
+      <p>The third reason is control. A model you host yourself does not change underneath you on a Tuesday. Its outputs are reproducible, its costs are predictable, and your data never leaves the building. For regulated industries this is not a preference but a requirement. For everyone else it is still a relief, because debugging a system whose core component shifts without notice is miserable work.</p>
+      <p>Control also means you can inspect what the model is doing. Smaller networks are easier to probe, prune and distil. When something goes wrong, you can often find out why, which is more than most teams can say about the largest systems they rent by the token.</p>
+      <h2 dir="auto">What the benchmarks leave out</h2>
+      <p>None of this shows up on a leaderboard. Benchmarks measure capability on a fixed set of questions, usually without a time limit, a budget or a privacy constraint. They reward breadth, because breadth is what a general test can measure. Real deployments reward something closer to fitness for purpose: good enough on the task that matters, fast enough that people keep using it, cheap enough to run a million times a day.</p>
+      <p>I do not think the frontier is unimportant. The largest models set the ceiling, generate training data for the small ones, and handle the long tail of hard requests that a routing layer sends their way. But the centre of gravity in applied work is moving towards the edge, and it is worth noticing before the next round of headlines tells us otherwise.</p>
+      <p>Next week I will look at how teams decide when to escalate a request from a small model to a large one, and why the best routing rules turn out to be surprisingly simple.</p>
+    </div>
+  </div>
+  <div class="subscription-widget-wrap">
+    <div class="subscription-widget show-subscribe">
+      <div class="preamble"><p>Thanks for reading The Long Context. Subscribe for free to receive new posts and support my work.</p></div>
+      <form action="/api/v1/free?nojs=true" method="post" class="form">
+        <input type="email" name="email" placeholder="Type your email…" />
+        <button tabindex="0" class="button primary" type="submit">Subscribe</button>
+      </form>
+    </div>
+  </div>
+</article>
+</div>
+</div>
+</div>
+</div>
+<footer class="footer-wrap">
+  <div class="footer"><a href="https://substack.com/privacy">Privacy</a> ∙ <a href="https://substack.com/tos">Terms</a> ∙ <a href="https://substack.com/ccpa#personal-data-collected">Collection notice</a></div>
+  <div class="footer-slogan">Substack is the home for great culture</div>
+</footer>
+</div>
+</div>
+<script>window._preloads = JSON.parse("{\"isEU\":false,\"language\":\"en\",\"post\":{\"title\":\"Why Small Models Keep Winning\",\"body_html\":\"<p>Every few months<\/p>\"}}")</script>
+<script src="https://substackcdn.com/bundle/assets/entry-4b3f9a.js" charset="utf-8"></script>
+</body>
+</html>

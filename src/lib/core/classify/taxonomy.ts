@@ -37,7 +37,7 @@ const YOUNG_LIBRARY_SIZE = 8;
 // ─── Cleaning ───────────────────────────────────────────────────────────────
 
 /** Control, zero-width and bidi characters that never belong in a name. */
-const INVISIBLE = /[\u0000-\u0008\u000e-\u001f\u007f-\u009f­​-‏‪-‮⁠-⁤﻿]/g;
+const INVISIBLE = /[\u0000-\u0008\u000e-\u001f\u007f-\u009f\u00ad\u200b-\u200f\u202a-\u202e\u2060-\u2064\ufeff]/g;
 /** Quotes, hashtags, bullets and list numbering in front of a name. */
 const LEADING_NOISE = /^(?:[\s"'“”‘’„«»‹›`#*•·~:;,!?|/\\_–—-]+|\d{1,2}[.)]\s+)+/u;
 /** Quotes and punctuation after a name ("Finance." → "Finance"); keeps C++ and C#. */
@@ -428,8 +428,9 @@ export function resolveCategories(
 
 /**
  * Turns proposed tags into the tags to apply: existing tags are reused by
- * key, new ones may be specific but stay under 4 words, and tags that repeat
- * one of `exclude` (the chosen categories) are dropped. At most 6 by default.
+ * key, new ones may be specific but run to at most 4 words, and tags that
+ * repeat one of `exclude` (the chosen categories) are dropped. At most 6 by
+ * default.
  */
 export function resolveTags(
   proposed: string[],

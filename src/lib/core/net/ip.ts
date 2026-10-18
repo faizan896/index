@@ -40,10 +40,10 @@ const IPV4_RANGES = NON_PUBLIC_IPV4.map(([first, prefix]) => {
  */
 export function isPublicAddress(address: string): boolean {
   if (typeof address !== "string") return false;
-  let text = address;
-  if (text.startsWith("[") && text.endsWith("]")) text = text.slice(1, -1);
+  const bracketed = address.startsWith("[") && address.endsWith("]");
+  const text = bracketed ? address.slice(1, -1) : address;
 
-  if (text.includes(":")) {
+  if (bracketed || text.includes(":")) {
     // A zone index ("fe80::1%eth0") only ever qualifies a non-global address.
     if (text.includes("%")) return false;
     const groups = parseIPv6(text);
