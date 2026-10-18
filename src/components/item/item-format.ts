@@ -1,9 +1,10 @@
 /**
  * Pure helpers for the item detail page: what the header's meta line says,
- * how addresses are shown, and how a related read explains itself.
+ * what the Details list holds, how addresses are shown, and how a related
+ * read explains itself.
  */
 import { displaySource, formatDate, formatReadingTime } from "@/lib/format";
-import type { LinkListItem, ProcessingStatus, RelatedLink } from "@/lib/types";
+import type { LinkDetail, LinkListItem, ProcessingStatus, RelatedLink } from "@/lib/types";
 
 /** What the background work is doing right now. */
 export type ProcessingPhase = "fetching" | "sorting" | "idle";
@@ -122,4 +123,57 @@ export function splitNames(input: string): string[] {
 /** Orders names the way the database lists them (alphabetically, ignoring case). */
 export function byName(a: { name: string }, b: { name: string }): number {
   return a.name.localeCompare(b.name, "en", { sensitivity: "base" });
+}
+
+/** How many characters of an address the Details list shows before cutting out the middle. */
+const ADDRESS_LENGTH = 60;
+
+/** One line of the Details list. */
+export type ItemFact =
+  | { kind: "text"; label: string; text: string }
+  | { kind: "date"; label: string; text: string; dateTime: string }
+  /** `text` is shortened for display; `full` is the whole address; `href` is null unless it is a web address. */
+  | { kind: "address"; label: string; text: string; full: string; href: string | null };
+
+export type ItemFactsLink = Pick<
+  LinkDetail,
+  "url" | "canonicalUrl" | "resolvedUrl" | "createdAt" | "status" | "statusChangedAt" | "finishedAt" | "lang" | "wordCount"
+>;
+
+function dateFact(label: string, value: string | null): ItemFact[] {
+  const text = formatDate(value);
+  return value && text ? [{ kind: "date", label, text, dateTime: value }] : [];
+}
+
+function addressFact(label: string, url: string): ItemFact {
+  return { kind: "address", label, text: truncateMiddle(displayUrl(url), ADDRESS_LENGTH), full: url, href: safeHref(url) };
+}
+
+/**
+ * The Details list, in order: when it was saved, when its status last
+ * changed (or when it was finished), its addresses (the canonical and
+ * resolved ones only when they differ from what was saved), language and
+ * length. Facts the link doesn't have are left out.
+ */
+export function itemFacts(link: ItemFactsLink): ItemFact[] {
+  const facts: ItemFact[] = [...dateFact("Saved", link.createdAt)];
+
+  if (link.status === "finished") facts.push(...dateFact("Finished", link.finishedAt ?? link.statusChangedAt));
+  else if (link.status === "reading") facts.push(...dateFact("Started reading", link.statusChangedAt));
+  else facts.push(...dateFact("Status changed", link.statusChangedAt));
+
+  facts.push(addressFact("Original URL", link.url));
+  const canonical = link.canonicalUrl?.trim();
+  if (canonical && !isSameAddress(canonical, link.url)) facts.push(addressFact("Canonical URL", canonical));
+  const resolved = link.resolvedUrl?.trim();
+  if (resolved && !isSameAddress(resolved, link.url) && !(canonical && isSameAddress(resolved, canonical))) {
+    facts.push(addressFact("Resolved URL", resolved));
+  }
+
+  const language = languageName(link.lang);
+  if (language) facts.push({ kind: "text", label: "Language", text: language });
+  if (link.wordCount && link.wordCount > 0) {
+    facts.push({ kind: "text", label: "Word count", text: Math.round(link.wordCount).toLocaleString("en-US") });
+  }
+  return facts;
 }

@@ -15,7 +15,8 @@ import { READING_STATUSES, type ReadingStatus } from "@/lib/types";
 
 /** Rows read from one file; the rest are reported as skipped. */
 export const MAX_IMPORT_ROWS = 5000;
-export const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
+/** Below Vercel's 4.5 MB request-body ceiling for functions. */
+export const MAX_IMPORT_BYTES = 4 * 1024 * 1024;
 
 // Bounds from the database schema (saved_links, notes, categories, tags).
 const MAX_TITLE_LENGTH = 500;

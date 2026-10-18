@@ -9,27 +9,9 @@ import { useToast } from "@/components/ui/Toast";
 import { addNote } from "@/lib/actions/notes";
 import type { Note } from "@/lib/types";
 import { ItemSection } from "./ItemSection";
-import { NoteItem, type NoteChange } from "./NoteItem";
+import { NoteItem } from "./NoteItem";
+import { applyNoteChange, isSaveShortcut, MAX_NOTE_LENGTH, unsavedNote } from "./notes-model";
 import { useAutosize } from "./useAutosize";
-
-/** The server's limit (addNote/updateNote). */
-export const MAX_NOTE_LENGTH = 20_000;
-
-function applyNoteChange(current: Note[], change: NoteChange): Note[] {
-  switch (change.type) {
-    case "add":
-      return [change.note, ...current];
-    case "edit":
-      return current.map((note) => (note.id === change.id ? { ...note, body: change.body, updatedAt: change.at } : note));
-    case "remove":
-      return current.filter((note) => note.id !== change.id);
-  }
-}
-
-/** True for ⌘+Enter / Ctrl+Enter, the "save this text" shortcut in note fields. */
-export function isSaveShortcut(event: KeyboardEvent<HTMLTextAreaElement>): boolean {
-  return event.key === "Enter" && (event.metaKey || event.ctrlKey) && !event.nativeEvent.isComposing;
-}
 
 /** A composer ("Add a note…", ⌘/Ctrl+Enter saves) above the item's notes, newest first. */
 export function NotesSection({ linkId, notes }: { linkId: string; notes: Note[] }) {
@@ -39,6 +21,7 @@ export function NotesSection({ linkId, notes }: { linkId: string; notes: Note[] 
   const [, startSaving] = useTransition();
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const composerId = useId();
+  const hintId = `${composerId}-hint`;
   useAutosize(composerRef, draft);
 
   function add() {
@@ -49,8 +32,7 @@ export function NotesSection({ linkId, notes }: { linkId: string; notes: Note[] 
     }
     setDraft("");
     startSaving(async () => {
-      const now = new Date().toISOString();
-      changeNotes({ type: "add", note: { id: `new:${now}`, linkId, body, createdAt: now, updatedAt: now } });
+      changeNotes({ type: "add", note: unsavedNote(linkId, body) });
       const result = await settle(addNote(linkId, body));
       if (!result.ok) {
         toast(result.error, { tone: "error" });
@@ -87,12 +69,15 @@ export function NotesSection({ linkId, notes }: { linkId: string; notes: Note[] 
           placeholder="Add a note…"
           maxLength={MAX_NOTE_LENGTH}
           aria-keyshortcuts="Meta+Enter Control+Enter"
+          aria-describedby={hintId}
         />
         <div className="mt-2 flex items-center gap-3">
           <Button type="submit" size="sm" disabled={!draft.trim()}>
             Save note
           </Button>
-          <span className="hidden text-xs text-muted sm:inline">⌘ or Ctrl + Enter</span>
+          <span id={hintId} className="hidden text-xs text-muted sm:inline">
+            ⌘ or Ctrl + Enter saves
+          </span>
         </div>
       </form>
 

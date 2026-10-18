@@ -6,6 +6,7 @@ import {
   byName,
   displayUrl,
   isSameAddress,
+  itemFacts,
   itemMetaParts,
   languageName,
   processingPhase,
@@ -155,5 +156,92 @@ describe("byName", () => {
   it("sorts alphabetically, ignoring case", () => {
     const sorted = [{ name: "beta" }, { name: "Alpha" }, { name: "gamma" }].sort(byName).map((entry) => entry.name);
     assert.deepEqual(sorted, ["Alpha", "beta", "gamma"]);
+  });
+});
+
+describe("itemFacts", () => {
+  const base = {
+    url: "https://example.com/essay",
+    canonicalUrl: null,
+    resolvedUrl: null,
+    createdAt: "2026-03-03T10:00:00Z",
+    status: "unread" as const,
+    statusChangedAt: null,
+    finishedAt: null,
+    lang: null,
+    wordCount: null,
+  };
+
+  it("lists when it was saved and the original address", () => {
+    assert.deepEqual(itemFacts(base), [
+      { kind: "date", label: "Saved", text: "3 Mar 2026", dateTime: "2026-03-03T10:00:00Z" },
+      {
+        kind: "address",
+        label: "Original URL",
+        text: "example.com/essay",
+        full: "https://example.com/essay",
+        href: "https://example.com/essay",
+      },
+    ]);
+  });
+
+  it("says when it was finished, started or last changed", () => {
+    const labels = (link: Parameters<typeof itemFacts>[0]) =>
+      itemFacts(link)
+        .filter((fact) => fact.kind === "date")
+        .map((fact) => `${fact.label} ${fact.text}`);
+    assert.deepEqual(labels({ ...base, status: "finished", statusChangedAt: "2026-04-01T00:00:00Z", finishedAt: "2026-04-02T00:00:00Z" }), [
+      "Saved 3 Mar 2026",
+      "Finished 2 Apr 2026",
+    ]);
+    assert.deepEqual(labels({ ...base, status: "reading", statusChangedAt: "2026-04-01T00:00:00Z" }), [
+      "Saved 3 Mar 2026",
+      "Started reading 1 Apr 2026",
+    ]);
+    assert.deepEqual(labels({ ...base, statusChangedAt: "2026-04-05T00:00:00Z" }), ["Saved 3 Mar 2026", "Status changed 5 Apr 2026"]);
+  });
+
+  it("shows other addresses only when they differ", () => {
+    const addresses = (link: Parameters<typeof itemFacts>[0]) =>
+      itemFacts(link)
+        .filter((fact) => fact.kind === "address")
+        .map((fact) => fact.label);
+    assert.deepEqual(addresses({ ...base, canonicalUrl: "https://example.com/essay/", resolvedUrl: "https://EXAMPLE.com/essay" }), [
+      "Original URL",
+    ]);
+    assert.deepEqual(addresses({ ...base, canonicalUrl: "https://example.com/c", resolvedUrl: "https://example.com/c" }), [
+      "Original URL",
+      "Canonical URL",
+    ]);
+    assert.deepEqual(addresses({ ...base, canonicalUrl: "https://example.com/c", resolvedUrl: "https://example.com/r" }), [
+      "Original URL",
+      "Canonical URL",
+      "Resolved URL",
+    ]);
+  });
+
+  it("shortens long addresses but keeps the full one, and links only web addresses", () => {
+    const url = `https://example.com/${"a-long-path-segment/".repeat(6)}end`;
+    const [, original] = itemFacts({ ...base, url });
+    assert.ok(original?.kind === "address");
+    assert.equal([...original.text].length, 60);
+    assert.equal(original.full, url);
+    assert.equal(original.href, url);
+
+    const [, odd] = itemFacts({ ...base, url: "javascript:alert(1)" });
+    assert.ok(odd?.kind === "address");
+    assert.equal(odd.href, null);
+  });
+
+  it("names the language and formats the word count", () => {
+    const facts = itemFacts({ ...base, lang: "en", wordCount: 12345 });
+    assert.deepEqual(
+      facts.filter((fact) => fact.kind === "text"),
+      [
+        { kind: "text", label: "Language", text: "English" },
+        { kind: "text", label: "Word count", text: "12,345" },
+      ],
+    );
+    assert.equal(itemFacts({ ...base, wordCount: 0 }).length, 2);
   });
 });

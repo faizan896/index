@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   startTransition,
+  useCallback,
   useEffect,
   useId,
   useOptimistic,
@@ -90,9 +91,9 @@ export function CollectionsSection({ linkId, collections, suggested, allCollecti
   const memberIds = new Set(shown.collections.map((collection) => collection.id));
   const others = allCollections.filter((collection) => !memberIds.has(collection.id));
 
-  function focusAddControl() {
+  const focusAddControl = useCallback(() => {
     (selectRef.current ?? newButtonRef.current)?.focus();
-  }
+  }, []);
 
   useEffect(() => {
     if (creating) {
@@ -101,7 +102,7 @@ export function CollectionsSection({ linkId, collections, suggested, allCollecti
       returnFocus.current = false;
       focusAddControl();
     }
-  }, [creating]);
+  }, [creating, focusAddControl]);
 
   function run(update: MembershipChange, action: () => Promise<ActionResult>) {
     startSaving(async () => {
@@ -273,8 +274,10 @@ export function CollectionsSection({ linkId, collections, suggested, allCollecti
               </p>
             ) : null}
           </form>
-        ) : others.length > 0 ? (
-          // A native select sizes itself to its longest option; the cap keeps long names from widening the page.
+        ) : allCollections.length > 0 ? (
+          // Shown whenever any collection exists (even if this item is in all of them), so the control
+          // that removing or accepting moves focus to stays put. A native select sizes itself to its
+          // longest option; the cap keeps long names from widening the page.
           <Select ref={selectRef} inline value="" onChange={onSelect} aria-label="Add to collection" className="max-w-56">
             <option value="" disabled>
               Add to collection…

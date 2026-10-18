@@ -129,6 +129,20 @@ begin
     if new.is_favorite is distinct from old.is_favorite then
       new.favorited_at := case when new.is_favorite then now() else null end;
     end if;
+    -- The vector is derived data: rebuild it only when one of its sources
+    -- changed (status and processing updates are frequent and don't), and
+    -- never let a direct write to it stick.
+    if new.title is not distinct from old.title
+      and new.taxonomy_text is not distinct from old.taxonomy_text
+      and new.site_name is not distinct from old.site_name
+      and new.author is not distinct from old.author
+      and new.domain is not distinct from old.domain
+      and new.description is not distinct from old.description
+      and new.notes_text is not distinct from old.notes_text
+    then
+      new.search_vector := old.search_vector;
+      return new;
+    end if;
   else
     if new.status <> 'unread' then
       new.status_changed_at := coalesce(new.status_changed_at, now());
@@ -163,7 +177,7 @@ create table public.categories (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   name text not null check (char_length(btrim(name)) between 1 and 60),
-  -- Lowercase dedup key computed by the app (see src/lib/core/taxonomy.ts).
+  -- Lowercase dedup key computed by the app (see src/lib/core/slug.ts).
   slug text not null check (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$' and char_length(slug) <= 80),
   created_by public.assignment_source not null default 'user',
   created_at timestamptz not null default now(),
@@ -282,60 +296,98 @@ create table public.classification_cache (
 
 -- ─── Search text maintenance ────────────────────────────────────────────────
 
+-- The refreshers write only rows whose text actually changed, so a cascade
+-- from a deleted link (or a no-op) costs a lookup, not a row rewrite. Each
+-- link's text is computed once (materialized), not once for the comparison
+-- and again for the assignment.
+create function public.refresh_links_taxonomy(p_link_ids uuid[]) returns void
+language sql
+set search_path = ''
+as $$
+  with fresh as materialized (
+    select ids.link_id, concat_ws(' ',
+      (select string_agg(c.name, ' ' order by c.name)
+       from public.link_categories lc
+       join public.categories c on c.id = lc.category_id
+       where lc.link_id = ids.link_id),
+      (select string_agg(t.name, ' ' order by t.name)
+       from public.link_tags lt
+       join public.tags t on t.id = lt.tag_id
+       where lt.link_id = ids.link_id)
+    ) as taxonomy_text
+    from (select distinct unnest(p_link_ids) as link_id) ids
+  )
+  update public.saved_links l
+  set taxonomy_text = fresh.taxonomy_text
+  from fresh
+  where l.id = fresh.link_id
+    and l.taxonomy_text is distinct from fresh.taxonomy_text;
+$$;
+
 create function public.refresh_link_taxonomy(p_link_id uuid) returns void
 language sql
 set search_path = ''
 as $$
-  update public.saved_links l
-  set taxonomy_text = coalesce((
-        select string_agg(c.name, ' ' order by c.name)
-        from public.link_categories lc
-        join public.categories c on c.id = lc.category_id
-        where lc.link_id = l.id
-      ), '') || ' ' || coalesce((
-        select string_agg(t.name, ' ' order by t.name)
-        from public.link_tags lt
-        join public.tags t on t.id = lt.tag_id
-        where lt.link_id = l.id
-      ), '')
-  where l.id = p_link_id;
+  select public.refresh_links_taxonomy(array[p_link_id]);
 $$;
 
 create function public.refresh_link_notes(p_link_id uuid) returns void
 language sql
 set search_path = ''
 as $$
+  with fresh as materialized (
+    select left(coalesce((
+      select string_agg(n.body, ' ' order by n.created_at, n.id)
+      from public.notes n
+      where n.link_id = p_link_id
+    ), ''), 20000) as notes_text
+  )
   update public.saved_links l
-  set notes_text = left(coalesce((
-        select string_agg(n.body, ' ' order by n.created_at)
-        from public.notes n
-        where n.link_id = l.id
-      ), ''), 20000)
-  where l.id = p_link_id;
+  set notes_text = fresh.notes_text
+  from fresh
+  where l.id = p_link_id
+    and l.notes_text is distinct from fresh.notes_text;
 $$;
 
-create function public.link_assignment_changed() returns trigger
+-- Statement-level, with transition tables: a bulk insert, a merge or the
+-- cascade from deleting a category rewrites each affected link once, not
+-- once per assignment row.
+create function public.link_assignments_changed() returns trigger
 language plpgsql
 set search_path = ''
 as $$
 begin
-  if tg_op in ('INSERT', 'UPDATE') then
-    perform public.refresh_link_taxonomy(new.link_id);
-  end if;
-  if tg_op in ('DELETE', 'UPDATE') then
-    perform public.refresh_link_taxonomy(old.link_id);
+  if tg_op = 'INSERT' then
+    perform public.refresh_links_taxonomy(array(select n.link_id from new_rows n));
+  elsif tg_op = 'UPDATE' then
+    perform public.refresh_links_taxonomy(array(
+      select n.link_id from new_rows n union select o.link_id from old_rows o));
+  else
+    perform public.refresh_links_taxonomy(array(select o.link_id from old_rows o));
   end if;
   return null;
 end;
 $$;
 
-create trigger link_categories_changed
-  after insert or update or delete on public.link_categories
-  for each row execute function public.link_assignment_changed();
+create trigger link_categories_inserted
+  after insert on public.link_categories referencing new table as new_rows
+  for each statement execute function public.link_assignments_changed();
+create trigger link_categories_updated
+  after update on public.link_categories referencing old table as old_rows new table as new_rows
+  for each statement execute function public.link_assignments_changed();
+create trigger link_categories_deleted
+  after delete on public.link_categories referencing old table as old_rows
+  for each statement execute function public.link_assignments_changed();
 
-create trigger link_tags_changed
-  after insert or update or delete on public.link_tags
-  for each row execute function public.link_assignment_changed();
+create trigger link_tags_inserted
+  after insert on public.link_tags referencing new table as new_rows
+  for each statement execute function public.link_assignments_changed();
+create trigger link_tags_updated
+  after update on public.link_tags referencing old table as old_rows new table as new_rows
+  for each statement execute function public.link_assignments_changed();
+create trigger link_tags_deleted
+  after delete on public.link_tags referencing old table as old_rows
+  for each statement execute function public.link_assignments_changed();
 
 create function public.taxonomy_renamed() returns trigger
 language plpgsql
@@ -344,11 +396,11 @@ as $$
 begin
   if new.name is distinct from old.name then
     if tg_table_name = 'categories' then
-      perform public.refresh_link_taxonomy(lc.link_id)
-      from public.link_categories lc where lc.category_id = new.id;
+      perform public.refresh_links_taxonomy(array(
+        select lc.link_id from public.link_categories lc where lc.category_id = new.id));
     else
-      perform public.refresh_link_taxonomy(lt.link_id)
-      from public.link_tags lt where lt.tag_id = new.id;
+      perform public.refresh_links_taxonomy(array(
+        select lt.link_id from public.link_tags lt where lt.tag_id = new.id));
     end if;
   end if;
   return null;
@@ -368,11 +420,13 @@ language plpgsql
 set search_path = ''
 as $$
 begin
-  if tg_op in ('INSERT', 'UPDATE') then
-    perform public.refresh_link_notes(new.link_id);
-  end if;
   if tg_op = 'DELETE' then
     perform public.refresh_link_notes(old.link_id);
+  else
+    perform public.refresh_link_notes(new.link_id);
+    if tg_op = 'UPDATE' and old.link_id is distinct from new.link_id then
+      perform public.refresh_link_notes(old.link_id);
+    end if;
   end if;
   return null;
 end;
@@ -426,11 +480,13 @@ create policy "own classification cache" on public.classification_cache
   for all to authenticated
   using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
 
--- Anonymous visitors get nothing. Signed-in users get table privileges, and
--- the policies above decide which rows.
+-- Anonymous visitors get nothing. Signed-in users get exactly the four row
+-- privileges, and the policies above decide which rows. Supabase's default
+-- privileges grant ALL (including TRUNCATE, which ignores row-level
+-- security) to both roles, so everything is revoked first.
 revoke all on public.user_settings, public.saved_links, public.categories, public.link_categories,
   public.tags, public.link_tags, public.collections, public.collection_links, public.notes,
-  public.classification_cache from anon;
+  public.classification_cache from public, anon, authenticated;
 grant select, insert, update, delete on public.user_settings, public.saved_links, public.categories,
   public.link_categories, public.tags, public.link_tags, public.collections, public.collection_links,
   public.notes, public.classification_cache to authenticated;
@@ -439,16 +495,21 @@ grant select, insert, update, delete on public.user_settings, public.saved_links
 
 -- Builds a prefix-matching tsquery from free text: "stable coin" → 'stabl':* & 'coin':*.
 -- Returns null when nothing searchable remains (e.g. only stop words).
+-- At most 12 words, each cut to 100 characters (longer words are never
+-- indexed, and an ignored word would silently widen the AND). Only warnings
+-- and errors reach the client: to_tsquery() reports stop-word-only input as a
+-- NOTICE, which is expected here and only noise in the logs.
 create function public.search_query(p_text text) returns tsquery
 language plpgsql
 immutable
 set search_path = ''
+set client_min_messages = warning
 as $$
 declare
   v_source text;
   v_query tsquery;
 begin
-  select string_agg(quote_literal(token) || ':*', ' & ')
+  select string_agg(quote_literal(left(token, 100)) || ':*', ' & ')
   into v_source
   from (
     select token
@@ -497,6 +558,7 @@ begin
   from public.saved_links l
   where l.user_id = (select auth.uid())
     and (l.normalized_url = p_normalized_url or l.canonical_normalized_url = p_normalized_url)
+  order by l.normalized_url = p_normalized_url desc, l.created_at, l.id
   limit 1;
 
   if v_id is not null then
@@ -505,7 +567,7 @@ begin
   end if;
 
   insert into public.saved_links (url, normalized_url, domain, title)
-  values (p_url, p_normalized_url, p_domain, nullif(btrim(p_title), ''))
+  values (p_url, p_normalized_url, p_domain, left(nullif(btrim(p_title, e' \t\r\n'), ''), 500))
   on conflict (user_id, normalized_url) do nothing
   returning id into v_id;
 
@@ -560,11 +622,12 @@ create function public.list_links(
 language plpgsql
 stable
 set search_path = ''
+set client_min_messages = warning
 as $$
 declare
   v_tsquery tsquery := public.search_query(p_query);
-  v_text text := nullif(btrim(coalesce(p_query, '')), '');
-  v_like text := '%' || public.like_escape(btrim(coalesce(p_query, ''))) || '%';
+  v_text text := nullif(btrim(coalesce(p_query, ''), e' \t\r\n'), '');
+  v_like text := '%' || public.like_escape(btrim(coalesce(p_query, ''), e' \t\r\n')) || '%';
   v_sort text := coalesce(p_sort, 'recent');
   v_limit integer := least(greatest(coalesce(p_limit, 50), 1), 200);
   v_offset integer := greatest(coalesce(p_offset, 0), 0);
@@ -831,11 +894,14 @@ begin
   delete from public.link_categories
   where link_id = p_link_id and not (category_id = any(v_keep));
 
+  -- Choosing categories by hand settles classification. A worker still
+  -- reading the page keeps its claim, so no second worker starts on it.
   update public.saved_links
   set classification_status = case
         when classification_status in ('pending', 'processing', 'failed', 'skipped') then 'done'
         else classification_status end,
-      processing_started_at = null
+      processing_started_at = case
+        when metadata_status = 'processing' then processing_started_at end
   where id = p_link_id;
 end;
 $$;
@@ -911,6 +977,7 @@ returns table (
 language plpgsql
 stable
 set search_path = ''
+set client_min_messages = warning
 as $$
 declare
   v_user uuid := (select auth.uid());
@@ -1074,12 +1141,14 @@ $$;
 
 -- Bulk import. Each row: {url, normalized_url, domain, title?, description?,
 -- status?, is_favorite?, created_at?, note?, categories?: [{name, slug}],
--- tags?: [{name, slug}]}. Existing URLs are skipped, never overwritten.
+-- tags?: [{name, slug}]}. Existing URLs (saved, or the canonical address of a
+-- saved link, as in save_link) are skipped, never overwritten.
 create function public.import_links(p_rows jsonb) returns jsonb
 language plpgsql
 set search_path = ''
 as $$
 declare
+  v_user uuid := (select auth.uid());
   v_row jsonb;
   v_item jsonb;
   v_link uuid;
@@ -1093,6 +1162,14 @@ begin
   end if;
 
   for v_row in select * from jsonb_array_elements(p_rows) loop
+    if exists (
+      select 1 from public.saved_links l
+      where l.user_id = v_user and l.canonical_normalized_url = v_row->>'normalized_url'
+    ) then
+      v_duplicates := v_duplicates + 1;
+      continue;
+    end if;
+
     v_has_categories := jsonb_array_length(coalesce(v_row->'categories', '[]'::jsonb)) > 0;
 
     insert into public.saved_links (
@@ -1103,8 +1180,8 @@ begin
       v_row->>'url',
       v_row->>'normalized_url',
       v_row->>'domain',
-      nullif(btrim(v_row->>'title'), ''),
-      nullif(btrim(v_row->>'description'), ''),
+      left(nullif(btrim(v_row->>'title', e' \t\r\n'), ''), 500),
+      left(nullif(btrim(v_row->>'description', e' \t\r\n'), ''), 2000),
       coalesce((v_row->>'status')::public.reading_status, 'unread'),
       coalesce((v_row->>'is_favorite')::boolean, false),
       coalesce((v_row->>'created_at')::timestamptz, now()),
@@ -1139,11 +1216,9 @@ begin
       on conflict do nothing;
     end loop;
 
-    if nullif(btrim(v_row->>'note'), '') is not null then
-      insert into public.notes (link_id, body) values (v_link, left(btrim(v_row->>'note'), 20000));
+    if nullif(btrim(v_row->>'note', e' \t\r\n'), '') is not null then
+      insert into public.notes (link_id, body) values (v_link, left(btrim(v_row->>'note', e' \t\r\n'), 20000));
     end if;
-
-    v_link := null;
   end loop;
 
   return jsonb_build_object('imported', v_imported, 'duplicates', v_duplicates);
@@ -1238,6 +1313,7 @@ $$;
 
 revoke execute on all functions in schema public from public, anon;
 grant execute on function
+  public.refresh_links_taxonomy(uuid[]),
   public.refresh_link_taxonomy(uuid),
   public.refresh_link_notes(uuid),
   public.search_query(text),

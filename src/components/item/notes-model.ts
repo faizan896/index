@@ -1,6 +1,6 @@
 /**
  * Pure pieces of the Notes section: the optimistic list changes, the save
- * shortcut, and how a note's date line reads.
+ * shortcut, and when a note counts as edited.
  */
 import { formatDate } from "@/lib/format";
 import type { Note } from "@/lib/types";
@@ -48,9 +48,8 @@ export function isSaveShortcut(event: {
   return event.key === "Enter" && (event.metaKey || event.ctrlKey) && !event.nativeEvent.isComposing;
 }
 
-/** "3 Mar 2026", plus "· edited 5 Mar 2026" once it was changed on a later day. */
-export function noteDateLine(note: Pick<Note, "createdAt" | "updatedAt">): string {
-  const created = formatDate(note.createdAt);
+/** The day a note was last edited ("5 Mar 2026"), or "" when that was the day it was written. */
+export function noteEditedDate(note: Pick<Note, "createdAt" | "updatedAt">): string {
   const updated = formatDate(note.updatedAt);
-  return updated && updated !== created ? `${created} · edited ${updated}` : created;
+  return updated && updated !== formatDate(note.createdAt) ? updated : "";
 }

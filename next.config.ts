@@ -24,6 +24,12 @@ const contentSecurityPolicy = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  experimental: {
+    // CSV imports arrive through a server action; the default limit is 1 MB.
+    // Imports are capped at 4 MB (src/lib/core/import.ts), under Vercel's
+    // 4.5 MB request limit, plus room for the multipart envelope.
+    serverActions: { bodySizeLimit: "4.4mb" },
+  },
   async headers() {
     return [
       {

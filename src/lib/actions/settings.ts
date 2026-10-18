@@ -49,11 +49,11 @@ function toImportRow(candidate: ImportCandidate) {
 
 const IMPORT_CHUNK = 500;
 
-/** Reads the CSV in formData field "file" (max 5 MB, 5,000 rows) and imports it. */
+/** Reads the CSV in formData field "file" (max 4 MB, 5,000 rows) and imports it. */
 export async function importBookmarks(formData: FormData): Promise<ActionResult<ImportSummary>> {
   const file = formData instanceof FormData ? formData.get("file") : null;
   if (!(file instanceof File) || file.size === 0) return fail("Choose a CSV file to import.");
-  if (file.size > MAX_IMPORT_BYTES) return fail("That file is larger than 5 MB. Split it and import the parts.");
+  if (file.size > MAX_IMPORT_BYTES) return fail("That file is larger than 4 MB. Split it and import the parts.");
 
   const context = await getActionContext();
   if (!context) return fail(SIGNED_OUT);

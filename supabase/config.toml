@@ -1,0 +1,90 @@
+# Supabase CLI configuration for local development. `npx supabase start` runs
+# Postgres, Auth and Studio in Docker and applies supabase/migrations in name
+# order. A hosted project is configured in its dashboard instead (README.md,
+# "Setup"); `supabase link` and `supabase db push` only take the migrations
+# from here.
+
+project_id = "index"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+# Match your hosted project (Project Settings → Infrastructure).
+major_version = 17
+
+[db.pooler]
+enabled = false
+
+[db.seed]
+# No seed data: a library starts empty, and nothing fake is ever shown in it.
+enabled = false
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1"
+
+# Every email the local Auth server sends (sign-in links included) lands in
+# the inbox at http://127.0.0.1:54324 instead of being delivered.
+[inbucket]
+enabled = true
+port = 54324
+
+# Index uses none of these.
+[realtime]
+enabled = false
+
+[storage]
+enabled = false
+
+[edge_runtime]
+enabled = false
+
+[analytics]
+enabled = false
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+# /auth/callback takes PKCE codes (magic links as sent by default, and
+# Google); /auth/confirm takes token-hash links (see README for the template).
+additional_redirect_urls = [
+  "http://localhost:3000/auth/callback",
+  "http://localhost:3000/auth/confirm",
+]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+enable_anonymous_sign_ins = false
+enable_manual_linking = false
+
+# Email sign-in with magic links (no passwords).
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+secure_password_change = false
+max_frequency = "1s"
+otp_length = 6
+otp_expiry = 3600
+
+[auth.sms]
+enable_signup = false
+
+# Google sign-in. To try it locally, create an OAuth client with the
+# redirect URI http://127.0.0.1:54321/auth/v1/callback, export the two
+# variables below, set enabled = true and restart `supabase start`.
+[auth.external.google]
+enabled = false
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+redirect_uri = ""
+skip_nonce_check = false

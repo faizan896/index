@@ -202,8 +202,10 @@ Each link carries a weighted full-text vector: title, then categories, tags,
 source and author, then description, then notes. Triggers keep it current when
 any of those change. Queries are stemmed and prefix-matched; anything a
 full-text index can't express (a domain fragment, a stop word) falls back to
-substring matching. It stays fast with thousands of items (see the
-performance test in `supabase/tests`).
+substring matching. Under row-level security PostgreSQL won't use the
+full-text index for a signed-in user's query (the match operator isn't
+"leakproof"), so a search reads that user's own rows. At 5,000 links that
+measured roughly 10–30 ms (`supabase/tests/95_performance.test.sql`).
 
 ### Related Reads
 
@@ -219,7 +221,7 @@ changing the app.
 CSV import recognizes Pocket, Raindrop.io and Instapaper exports, Index's own
 CSV, and any file with a column of URLs. Optional columns: title, description,
 tags, categories (or folder), status, favorite, notes, and date saved. Rows
-already in your library are skipped. Imported links are then fetched and
+already in your library are skipped. Up to 5,000 rows or 4 MB per file. Imported links are then fetched and
 categorized in small batches.
 
 Export as **JSON** for a complete archive (every field, notes, collections), or
