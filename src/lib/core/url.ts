@@ -135,8 +135,11 @@ export function parseUserUrl(input: string): ParsedUrl {
   if ((raw.startsWith("<") && raw.endsWith(">")) || (raw.startsWith('"') && raw.endsWith('"'))) {
     raw = raw.slice(1, -1).trim();
   }
-  // Find a link inside surrounding text ("Worth reading: https://…").
-  if (/https?:\/\//i.test(raw) || /\s/.test(raw) || !HAS_SCHEME.test(raw)) {
+  // Find a link inside surrounding text ("Worth reading: https://…"). A bare
+  // address is already the link, even when its path or query carries another
+  // URL (web.archive.org/web/2020/https://example.com).
+  const bare = !/\s/.test(raw) && SCHEMELESS.test(raw);
+  if (!bare && (/https?:\/\//i.test(raw) || /\s/.test(raw) || !HAS_SCHEME.test(raw))) {
     const found = extractUrl(raw);
     if (found) raw = found;
     else if (/\s/.test(raw)) return { ok: false, error: "That doesn't look like a link." };
