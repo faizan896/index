@@ -39,6 +39,18 @@ describe("parseUserUrl", () => {
     );
   });
 
+  it("keeps a bare address whose path or query carries another URL", () => {
+    assert.equal(
+      ok("web.archive.org/web/2020/https://example.com/page").url,
+      "https://web.archive.org/web/2020/https://example.com/page",
+    );
+    assert.equal(
+      ok("example.com/login?next=https://other.com/x").url,
+      "https://example.com/login?next=https://other.com/x",
+    );
+    assert.equal(ok("Read:https://example.com/a").url, "https://example.com/a");
+  });
+
   it("strips tracking parameters, credentials and in-page fragments", () => {
     const result = ok("https://user:pw@example.com/post?utm_source=x&id=7&fbclid=abc#section-2");
     assert.equal(result.url, "https://example.com/post?id=7");
